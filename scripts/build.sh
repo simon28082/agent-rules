@@ -77,7 +77,7 @@ rewrite_rule_links_for_cursor "$cursor_index" > "$DIST/cursor/rules/agent-rules-
 while IFS= read -r relative; do
   [[ -n "$relative" ]] || continue
   [[ "$relative" != "rules/index.md" ]] || continue
-  cp "$ROOT/$relative" "$DIST/cursor/rules/$(rule_runtime_name "$relative")"
+  rewrite_rule_links_for_cursor "$(<"$ROOT/$relative")" > "$DIST/cursor/rules/$(rule_runtime_name "$relative")"
 done < <(collect_rule_paths)
 
 if [[ -d "$ROOT/skills" ]]; then
