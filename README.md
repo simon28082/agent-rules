@@ -5,10 +5,28 @@ Human-maintained personal agent rules kit.
 ## Source Layout
 
 ```text
-rules/      Source rules and routing table
+rules/      Source rules with platform-agnostic frontmatter
 skills/     Portable workflow skills
 scripts/    Build and install commands
 dist/       Generated artifacts, ignored by git
+```
+
+## Source Format
+
+Each rule file uses a simple frontmatter:
+
+```yaml
+---
+description: 规则描述
+match: always                          # 始终加载
+---
+```
+
+```yaml
+---
+description: 规则描述
+match: ["**/*.go", "**/go.mod"]        # 按 glob 条件加载
+---
 ```
 
 ## Commands
@@ -25,17 +43,23 @@ Install for Cursor:
 bash scripts/install.sh cursor
 ```
 
-Install for Codex:
+Install for opencode:
 
 ```bash
-bash scripts/install.sh codex
+bash scripts/install.sh opencode
 ```
 
-Install commands run build first.
+Install for Antigravity:
+
+```bash
+bash scripts/install.sh antigravity
+```
+
+Install commands run build first. Repeated installs update in place.
 
 ## Source vs Runtime
 
-Source files keep repository-relative paths. Runtime files are generated during install and may use agent-specific absolute paths or config registration.
+Source files keep repository-relative paths and platform-agnostic frontmatter. Build transforms them into each agent's native format. Install places them in each agent's global config location.
 
 ## Cursor Runtime
 
@@ -46,19 +70,28 @@ Source files keep repository-relative paths. Runtime files are generated during 
 ~/.cursor/skills/<skill>/SKILL.md
 ```
 
-Before copying generated files, install removes old `agent-rules-*.mdc` and legacy `personal-agent-*.mdc` files from the Cursor rules directory.
-Installed skills are marked with `.agent-rules-managed`; future installs remove stale marked skills before copying the current `dist/cursor/skills` set.
+Rules use Cursor's `.mdc` format with `alwaysApply` and `globs` for conditional loading. Old `agent-rules-*.mdc` and legacy `personal-agent-*.mdc` files are removed before install.
 
-## Codex Runtime
+## opencode Runtime
 
-`bash scripts/install.sh codex` writes:
+`bash scripts/install.sh opencode` writes:
 
 ```text
-~/.codex/skills/agent-rules/SKILL.md
-~/.codex/skills/agent-rules/rules/**/*.md
-~/.codex/skills/<workflow-skill>/SKILL.md
-~/.codex/config.toml
+~/.config/opencode/AGENTS.md          (managed block injected)
+~/.config/opencode/rules/languages/   (conditional rule files)
+~/.config/opencode/skills/<skill>/SKILL.md
 ```
 
-Before copying generated skills, install removes the legacy `agent-rules-bootstrap` skill and its config block if present.
-Installed skills are marked with `.agent-rules-managed`; future installs remove stale marked skills and their Codex config blocks before copying the current `dist/codex/skills` set.
+Always-loaded rules are inlined into a `<!-- agent-rules:start/end -->` block in `AGENTS.md`. Conditional rules are referenced via routing instructions. User content in `AGENTS.md` outside the managed block is preserved.
+
+## Antigravity Runtime
+
+`bash scripts/install.sh antigravity` writes:
+
+```text
+~/.gemini/config/AGENTS.md            (managed block injected)
+~/.gemini/config/rules/languages/     (conditional rule files)
+~/.gemini/config/skills/<skill>/SKILL.md
+```
+
+Same structure as opencode, adapted for Antigravity's global config path.

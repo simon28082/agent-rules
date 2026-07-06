@@ -1,10 +1,11 @@
 ---
 description: Python 语言与工具通用规范
-match: ["**/*.py"]
+alwaysApply: false
+globs:
 ---
 # Python 通用规范
 
-本文件只定义 Python 语言、工具与代码层面的特有约束。跨语言基础工程约束见 `rules/project.md`，仓库内更具体规则优先。
+本文件只定义 Python 语言、工具与代码层面的特有约束。跨语言基础工程约束见 `agent-rules-project.mdc`，仓库内更具体规则优先。
 
 ## 适用范围
 - 默认遵循项目声明的 Python 版本；未声明时使用 Python 3.12+。

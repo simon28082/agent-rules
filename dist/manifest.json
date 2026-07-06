@@ -1,0 +1,28 @@
+{
+  "timestamp": "2026-07-06T05:21:01Z",
+  "platforms": {
+    "cursor": {
+      "rules": [
+        "dist/cursor/rules/agent-rules-index.mdc",
+        "dist/cursor/rules/agent-rules-languages-go.mdc",
+        "dist/cursor/rules/agent-rules-languages-nodejs.mdc",
+        "dist/cursor/rules/agent-rules-languages-python.mdc",
+        "dist/cursor/rules/agent-rules-project.mdc",
+        "dist/cursor/rules/agent-rules-response.mdc"
+      ],
+      "skills": [
+        "dist/cursor/skills/*/SKILL.md"
+      ]
+    },
+    "opencode": {
+      "agents_md": "dist/opencode/agents.md",
+      "rules": "dist/opencode/rules/",
+      "skills": "dist/opencode/skills/"
+    },
+    "antigravity": {
+      "agents_md": "dist/antigravity/agents.md",
+      "rules": "dist/antigravity/rules/",
+      "skills": "dist/antigravity/skills/"
+    }
+  }
+}

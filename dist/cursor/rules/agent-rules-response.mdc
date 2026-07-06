@@ -1,6 +1,6 @@
 ---
 description: 所有任务始终加载的回复、证据、执行与验证规范
-match: always
+alwaysApply: true
 ---
 # 回复与工作规范
 

@@ -1,7 +1,3 @@
----
-description: Python 语言与工具通用规范
-match: ["**/*.py"]
----
 # Python 通用规范
 
 本文件只定义 Python 语言、工具与代码层面的特有约束。跨语言基础工程约束见 `rules/project.md`，仓库内更具体规则优先。

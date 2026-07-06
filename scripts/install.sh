@@ -5,8 +5,10 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DIST="$ROOT/dist"
 
 usage() {
-  printf 'Usage: %s {cursor|codex}\n' "$(basename "$0")" >&2
+  printf 'Usage: %s {cursor|opencode|antigravity}\n' "$(basename "$0")" >&2
 }
+
+# --- Shared helpers ---
 
 replace_dir() {
   local source="$1"
@@ -23,70 +25,8 @@ mark_managed() {
   touch "$target/.agent-rules-managed"
 }
 
-append_codex_skill_config() {
-  local skill_path="$1"
-  local config_path="$HOME/.codex/config.toml"
-
-  mkdir -p "$(dirname "$config_path")"
-  touch "$config_path"
-
-  if ! grep -Fq "$skill_path" "$config_path"; then
-    {
-      printf '\n[[skills.config]]\n'
-      printf 'path = "%s"\n' "$skill_path"
-      printf 'enabled = true\n'
-    } >> "$config_path"
-  fi
-}
-
-remove_codex_skill_config_matching() {
-  local match="$1"
-  local config_path="$HOME/.codex/config.toml"
-  local tmp_path
-
-  [[ -f "$config_path" ]] || return 0
-
-  tmp_path="$(mktemp)"
-  awk -v needle="$match" '
-    function flush_block() {
-      if (in_block) {
-        if (block !~ needle) {
-          printf "%s", block
-        }
-      } else {
-        printf "%s", block
-      }
-      block = ""
-    }
-
-    /^\[\[skills\.config\]\]$/ {
-      flush_block()
-      in_block = 1
-      block = $0 ORS
-      next
-    }
-
-    /^\[/ && in_block {
-      flush_block()
-      in_block = 0
-      block = $0 ORS
-      next
-    }
-
-    {
-      block = block $0 ORS
-    }
-
-    END {
-      flush_block()
-    }
-  ' "$config_path" > "$tmp_path"
-  mv "$tmp_path" "$config_path"
-}
-
 remove_managed_skill_dirs() {
   local skills_root="$1"
-  local config_cleanup="${2:-}"
   local skill_dir
 
   [[ -d "$skills_root" ]] || return 0
@@ -94,28 +34,92 @@ remove_managed_skill_dirs() {
   for skill_dir in "$skills_root"/*; do
     [[ -d "$skill_dir" ]] || continue
     [[ -f "$skill_dir/.agent-rules-managed" ]] || continue
-
-    if [[ "$config_cleanup" == "codex" ]]; then
-      remove_codex_skill_config_matching "$skill_dir/SKILL.md"
-    fi
-
     rm -rf "$skill_dir"
   done
 }
+
+remove_managed_rules_dir() {
+  local rules_root="$1"
+
+  [[ -d "$rules_root" ]] || return 0
+  [[ -f "$rules_root/.agent-rules-managed" ]] || return 0
+
+  rm -rf "$rules_root"
+}
+
+# Inject or replace the <!-- agent-rules:start --> ... <!-- agent-rules:end --> block
+# in the target AGENTS.md file. Preserves all user content outside the block.
+inject_agents_block() {
+  local agents_md_path="$1"
+  local content_file="$2"
+
+  mkdir -p "$(dirname "$agents_md_path")"
+
+  if [[ ! -f "$agents_md_path" ]]; then
+    # No existing AGENTS.md; just copy our content
+    cp "$content_file" "$agents_md_path"
+    return
+  fi
+
+  if grep -q '<!-- agent-rules:start -->' "$agents_md_path"; then
+    # Replace existing block
+    local tmp_path
+    tmp_path="$(mktemp)"
+
+    awk '
+      /<!-- agent-rules:start -->/ { skip = 1; next }
+      /<!-- agent-rules:end -->/ { skip = 0; next }
+      !skip { print }
+    ' "$agents_md_path" > "$tmp_path"
+
+    # Remove trailing blank lines from user content
+    local user_content
+    user_content="$(awk '
+      /^[[:space:]]*$/ { blank = blank $0 ORS; next }
+      { printf "%s%s", blank, $0 ORS; blank = "" }
+    ' "$tmp_path")"
+
+    {
+      if [[ -n "$user_content" ]]; then
+        printf '%s\n\n' "$user_content"
+      fi
+      cat "$content_file"
+    } > "$agents_md_path"
+
+    rm -f "$tmp_path"
+  else
+    # No existing block; append after existing content
+    {
+      printf '\n'
+      cat "$content_file"
+    } >> "$agents_md_path"
+  fi
+}
+
+# --- Cursor ---
 
 install_cursor() {
   local cursor_rules="$HOME/.cursor/rules"
   local cursor_skills="$HOME/.cursor/skills"
 
   mkdir -p "$cursor_rules" "$cursor_skills"
+
+  # Clean old rule files
   rm -f "$cursor_rules"/agent-rules-*.mdc "$cursor_rules"/personal-agent-*.mdc
+
+  # Clean old managed skills
   remove_managed_skill_dirs "$cursor_skills"
+
+  # Copy new rules
   cp "$DIST/cursor/rules/"*.mdc "$cursor_rules/"
 
+  # Copy new skills
   if [[ -d "$DIST/cursor/skills" ]]; then
     for skill_dir in "$DIST/cursor/skills"/*; do
       [[ -d "$skill_dir" ]] || continue
-      local target="$cursor_skills/$(basename "$skill_dir")"
+      local name
+      name="$(basename "$skill_dir")"
+      local target="$cursor_skills/$name"
       replace_dir "$skill_dir" "$target"
       mark_managed "$target"
     done
@@ -125,28 +129,85 @@ install_cursor() {
   printf 'Installed Cursor skills to %s\n' "$cursor_skills"
 }
 
-install_codex() {
-  local codex_skills="$HOME/.codex/skills"
+# --- opencode ---
 
-  mkdir -p "$codex_skills"
-  rm -rf "$codex_skills/agent-rules-bootstrap"
-  remove_codex_skill_config_matching 'agent-rules-bootstrap/SKILL.md'
-  remove_managed_skill_dirs "$codex_skills" "codex"
+install_opencode() {
+  local opencode_root="$HOME/.config/opencode"
+  local opencode_rules="$opencode_root/rules"
+  local opencode_skills="$opencode_root/skills"
 
-  for skill_dir in "$DIST/codex/skills"/*; do
-    [[ -d "$skill_dir" ]] || continue
-    local target="$codex_skills/$(basename "$skill_dir")"
-    replace_dir "$skill_dir" "$target"
-    mark_managed "$target"
+  mkdir -p "$opencode_root" "$opencode_skills"
 
-    if [[ -f "$target/SKILL.md" ]]; then
-      append_codex_skill_config "$target/SKILL.md"
-    fi
-  done
+  # Clean old managed rules and skills
+  remove_managed_rules_dir "$opencode_rules"
+  remove_managed_skill_dirs "$opencode_skills"
 
-  printf 'Installed Codex skills to %s\n' "$codex_skills"
-  printf 'Updated Codex config at %s\n' "$HOME/.codex/config.toml"
+  # Copy conditional rule files
+  if [[ -d "$DIST/opencode/rules" ]]; then
+    cp -R "$DIST/opencode/rules" "$opencode_rules"
+    mark_managed "$opencode_rules"
+  fi
+
+  # Copy skills
+  if [[ -d "$DIST/opencode/skills" ]]; then
+    for skill_dir in "$DIST/opencode/skills"/*; do
+      [[ -d "$skill_dir" ]] || continue
+      local name
+      name="$(basename "$skill_dir")"
+      local target="$opencode_skills/$name"
+      replace_dir "$skill_dir" "$target"
+      mark_managed "$target"
+    done
+  fi
+
+  # Inject AGENTS.md block
+  inject_agents_block "$opencode_root/AGENTS.md" "$DIST/opencode/agents.md"
+
+  printf 'Installed opencode rules to %s\n' "$opencode_rules"
+  printf 'Installed opencode skills to %s\n' "$opencode_skills"
+  printf 'Updated AGENTS.md at %s\n' "$opencode_root/AGENTS.md"
 }
+
+# --- antigravity ---
+
+install_antigravity() {
+  local agy_root="$HOME/.gemini/config"
+  local agy_rules="$agy_root/rules"
+  local agy_skills="$agy_root/skills"
+
+  mkdir -p "$agy_root" "$agy_skills"
+
+  # Clean old managed rules and skills
+  remove_managed_rules_dir "$agy_rules"
+  remove_managed_skill_dirs "$agy_skills"
+
+  # Copy conditional rule files
+  if [[ -d "$DIST/antigravity/rules" ]]; then
+    cp -R "$DIST/antigravity/rules" "$agy_rules"
+    mark_managed "$agy_rules"
+  fi
+
+  # Copy skills
+  if [[ -d "$DIST/antigravity/skills" ]]; then
+    for skill_dir in "$DIST/antigravity/skills"/*; do
+      [[ -d "$skill_dir" ]] || continue
+      local name
+      name="$(basename "$skill_dir")"
+      local target="$agy_skills/$name"
+      replace_dir "$skill_dir" "$target"
+      mark_managed "$target"
+    done
+  fi
+
+  # Inject AGENTS.md block
+  inject_agents_block "$agy_root/AGENTS.md" "$DIST/antigravity/agents.md"
+
+  printf 'Installed antigravity rules to %s\n' "$agy_rules"
+  printf 'Installed antigravity skills to %s\n' "$agy_skills"
+  printf 'Updated AGENTS.md at %s\n' "$agy_root/AGENTS.md"
+}
+
+# --- Main ---
 
 main() {
   if [[ $# -ne 1 ]]; then
@@ -154,14 +215,17 @@ main() {
     exit 2
   fi
 
-  "$ROOT/scripts/build.sh"
+  bash "$ROOT/scripts/build.sh"
 
   case "$1" in
     cursor)
       install_cursor
       ;;
-    codex)
-      install_codex
+    opencode)
+      install_opencode
+      ;;
+    antigravity)
+      install_antigravity
       ;;
     *)
       usage
