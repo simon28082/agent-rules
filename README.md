@@ -80,9 +80,10 @@ Rules use Cursor's `.mdc` format with `alwaysApply` and `globs` for conditional 
 ~/.config/opencode/instructions.md    (managed block injected)
 ~/.config/opencode/rules/languages/   (conditional rule files)
 ~/.config/opencode/skills/<skill>/SKILL.md
+~/.agents/skills/<skill>/SKILL.md     (shared cross-agent skills)
 ```
 
-Always-loaded rules are merged into a single `<!--agent-rules:begin/end-->` block in `instructions.md`. Conditional rules are referenced via routing instructions. User content in `instructions.md` outside the managed block is preserved.
+Always-loaded rules are merged into a single `<!--agent-rules:begin/end-->` block in `instructions.md`. Conditional rules are referenced via routing instructions. User content in `instructions.md` outside the managed block is preserved. Skills are also installed to `~/.agents/skills/` for use by other agents (Claude Code, Codex, etc.).
 
 ## Antigravity Runtime
 

@@ -131,6 +131,23 @@ install_cursor() {
 
 # --- opencode ---
 
+install_skills_to() {
+  local target_skills="$1"
+  mkdir -p "$target_skills"
+  remove_managed_skill_dirs "$target_skills"
+
+  if [[ -d "$DIST/opencode/skills" ]]; then
+    local skill_dir name target
+    for skill_dir in "$DIST/opencode/skills"/*; do
+      [[ -d "$skill_dir" ]] || continue
+      name="$(basename "$skill_dir")"
+      target="$target_skills/$name"
+      replace_dir "$skill_dir" "$target"
+      mark_managed "$target"
+    done
+  fi
+}
+
 install_opencode() {
   local opencode_root="$HOME/.config/opencode"
   local opencode_rules="$opencode_root/rules"
@@ -148,17 +165,9 @@ install_opencode() {
     mark_managed "$opencode_rules"
   fi
 
-  # Copy skills
-  if [[ -d "$DIST/opencode/skills" ]]; then
-    for skill_dir in "$DIST/opencode/skills"/*; do
-      [[ -d "$skill_dir" ]] || continue
-      local name
-      name="$(basename "$skill_dir")"
-      local target="$opencode_skills/$name"
-      replace_dir "$skill_dir" "$target"
-      mark_managed "$target"
-    done
-  fi
+  # Copy skills to opencode and .agents (shared cross-agent location)
+  install_skills_to "$opencode_skills"
+  install_skills_to "$HOME/.agents/skills"
 
   # Inject instructions.md block
   inject_instructions_block "$opencode_root/instructions.md" "$DIST/opencode/instructions.md"
