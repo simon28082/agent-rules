@@ -1,9 +1,9 @@
 ---
 description: Go 规范
-alwaysApply: false
 globs:
   - "**/*.go"
   - "**/go.mod"
+alwaysApply: false
 ---
 # Go 通用规范
 

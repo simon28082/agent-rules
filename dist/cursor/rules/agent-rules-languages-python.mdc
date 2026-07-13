@@ -1,7 +1,7 @@
 ---
 description: Python 规范
-alwaysApply: false
 globs:
+alwaysApply: false
 ---
 # Python 通用规范
 

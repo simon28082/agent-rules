@@ -49,6 +49,17 @@ strip_frontmatter() {
   ' "$file"
 }
 
+# Validate that apply:always and match are not both set (mutually exclusive).
+validate_frontmatter() {
+  local file="$1"
+  local apply="$2"
+  local match="$3"
+  if [[ "$apply" == "always" && -n "$match" ]]; then
+    printf 'Error: %s has both apply:always and match — these are mutually exclusive\n' "$file" >&2
+    exit 1
+  fi
+}
+
 # Parse match array into individual glob values (one per line).
 # Input: '["**/*.go", "**/go.mod"]'
 parse_match_globs() {
@@ -123,6 +134,7 @@ build_cursor() {
     title="$(parse_title "$ROOT/$relative")"
     body="$(strip_frontmatter "$ROOT/$relative")"
     body="$(rewrite_rule_links_for_cursor "$body")"
+    validate_frontmatter "$ROOT/$relative" "$apply_val" "$match"
 
     {
       printf '%s\n' '---'
@@ -131,12 +143,12 @@ build_cursor() {
       if [[ "$apply_val" == "always" ]]; then
         printf '%s\n' 'alwaysApply: true'
       elif [[ -n "$match" ]]; then
-        printf '%s\n' 'alwaysApply: false'
         printf '%s\n' 'globs:'
         while IFS= read -r glob; do
           [[ -n "$glob" ]] || continue
           printf '  - "%s"\n' "$glob"
         done < <(parse_match_globs "$match")
+        printf '%s\n' 'alwaysApply: false'
       fi
 
       printf '%s\n' '---'
@@ -168,6 +180,8 @@ build_agents_platform() {
   while IFS= read -r relative; do
     [[ -n "$relative" ]] || continue
     apply_val="$(parse_apply "$ROOT/$relative")"
+    match="$(parse_match "$ROOT/$relative")"
+    validate_frontmatter "$ROOT/$relative" "$apply_val" "$match"
     if [[ "$apply_val" == "always" ]]; then
       always_rules+=("$relative")
     else
@@ -229,7 +243,7 @@ build_agents_platform() {
         printf '# %s\n\n' "$title"
       fi
       if [[ -n "$match" ]]; then
-        printf '> 此规则适用于 `%s`\n\n' "$match"
+        printf '> 此规则适用于 %s（`%s`）\n\n' "$title" "$match"
       fi
       printf '%s\n' "$cond_body"
     } > "$target_file"
@@ -305,6 +319,7 @@ generate_manifest() {
 self_check() {
   local source_rule_count cursor_rule_count
   local opencode_agents antigravity_agents
+  local apply_val match conditional_count opencode_rule_count
 
   source_rule_count="$(count_files "$ROOT/rules" '*.md')"
   cursor_rule_count="$(count_files "$DIST/cursor/rules" '*.mdc')"
@@ -325,6 +340,29 @@ self_check() {
       exit 1
     fi
   done
+
+  # Verify opencode instructions.md exists
+  if [[ ! -f "$DIST/opencode/instructions.md" ]]; then
+    printf 'Build check failed: dist/opencode/instructions.md missing\n' >&2
+    exit 1
+  fi
+
+  # Count source rules with match (conditional rules)
+  conditional_count=0
+  while IFS= read -r relative; do
+    [[ -n "$relative" ]] || continue
+    apply_val="$(parse_apply "$ROOT/$relative")"
+    match="$(parse_match "$ROOT/$relative")"
+    if [[ -n "$match" && "$apply_val" != "always" ]]; then
+      conditional_count=$((conditional_count + 1))
+    fi
+  done < <(collect_rule_paths)
+
+  opencode_rule_count="$(count_files "$DIST/opencode/rules" '*.md')"
+  if [[ "$opencode_rule_count" != "$conditional_count" ]]; then
+    printf 'Build check failed: opencode conditional rule count %s != source conditional count %s\n' "$opencode_rule_count" "$conditional_count" >&2
+    exit 1
+  fi
 
   # Verify no local absolute paths leaked into dist
   if grep -R -q '/Users/' "$DIST"; then

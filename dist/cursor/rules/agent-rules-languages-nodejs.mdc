@@ -1,10 +1,10 @@
 ---
 description: Node.js / TypeScript 规范
-alwaysApply: false
 globs:
   - "**/*.ts"
   - "**/*.tsx"
   - "**/*.js"
+alwaysApply: false
 ---
 # Node.js / TypeScript 通用规范
 
