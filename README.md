@@ -17,14 +17,14 @@ Each rule file uses a simple frontmatter:
 
 ```yaml
 ---
-description: 规则描述
-match: always                          # 始终加载
+title: 规则名称
+apply: always                          # 始终加载
 ---
 ```
 
 ```yaml
 ---
-description: 规则描述
+title: 规则名称
 match: ["**/*.go", "**/go.mod"]        # 按 glob 条件加载
 ---
 ```
@@ -43,7 +43,7 @@ Install for Cursor:
 bash scripts/install.sh cursor
 ```
 
-Install for opencode:
+Install for OpenCode:
 
 ```bash
 bash scripts/install.sh opencode
@@ -77,19 +77,19 @@ Rules use Cursor's `.mdc` format with `alwaysApply` and `globs` for conditional 
 `bash scripts/install.sh opencode` writes:
 
 ```text
-~/.config/opencode/AGENTS.md          (managed block injected)
+~/.config/opencode/instructions.md    (managed block injected)
 ~/.config/opencode/rules/languages/   (conditional rule files)
 ~/.config/opencode/skills/<skill>/SKILL.md
 ```
 
-Always-loaded rules are inlined into a `<!-- agent-rules:start/end -->` block in `AGENTS.md`. Conditional rules are referenced via routing instructions. User content in `AGENTS.md` outside the managed block is preserved.
+Always-loaded rules are merged into a single `<!--agent-rules:begin/end-->` block in `instructions.md`. Conditional rules are referenced via routing instructions. User content in `instructions.md` outside the managed block is preserved.
 
 ## Antigravity Runtime
 
 `bash scripts/install.sh antigravity` writes:
 
 ```text
-~/.gemini/config/AGENTS.md            (managed block injected)
+~/.gemini/config/instructions.md      (managed block injected)
 ~/.gemini/config/rules/languages/     (conditional rule files)
 ~/.gemini/config/skills/<skill>/SKILL.md
 ```
