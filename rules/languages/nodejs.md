@@ -1,5 +1,5 @@
 ---
-description: Node.js / TypeScript 语言与工具通用规范
+title: Node.js / TypeScript 规范
 match: ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"]
 ---
 # Node.js / TypeScript 通用规范

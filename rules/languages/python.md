@@ -1,5 +1,5 @@
 ---
-description: Python 语言与工具通用规范
+title: Python 规范
 match: ["**/*.py"]
 ---
 # Python 通用规范

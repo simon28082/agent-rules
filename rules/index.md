@@ -1,6 +1,6 @@
 ---
-description: AI 规则索引与冲突顺序
-match: always
+title: 规则索引
+apply: always
 ---
 # 规则索引
 

@@ -1,5 +1,5 @@
 ---
-description: Go 语言与工具通用规范
+title: Go 规范
 match: ["**/*.go", "**/go.mod", "**/go.sum"]
 ---
 # Go 通用规范

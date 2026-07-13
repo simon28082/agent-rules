@@ -1,6 +1,6 @@
 ---
-description: 跨语言项目基础工程规范
-match: always
+title: 项目基础规范
+apply: always
 ---
 # 项目基础规范
 
