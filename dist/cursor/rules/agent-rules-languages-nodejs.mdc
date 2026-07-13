@@ -4,6 +4,7 @@ globs:
   - "**/*.ts"
   - "**/*.tsx"
   - "**/*.js"
+  - "**/*.jsx"
 alwaysApply: false
 ---
 # Node.js / TypeScript 通用规范

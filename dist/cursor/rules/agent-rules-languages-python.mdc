@@ -1,6 +1,7 @@
 ---
 description: Python 规范
 globs:
+  - "**/*.py"
 alwaysApply: false
 ---
 # Python 通用规范

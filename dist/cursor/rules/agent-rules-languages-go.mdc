@@ -3,6 +3,7 @@ description: Go 规范
 globs:
   - "**/*.go"
   - "**/go.mod"
+  - "**/go.sum"
 alwaysApply: false
 ---
 # Go 通用规范

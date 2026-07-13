@@ -65,7 +65,7 @@ validate_frontmatter() {
 parse_match_globs() {
   local match="$1"
   # Strip brackets, split by comma, trim whitespace and quotes
-  printf '%s' "$match" | tr -d '[]' | tr ',' '\n' | sed 's/^ *"//; s/" *$//'
+  printf '%s\n' "$match" | tr -d '[]' | tr ',' '\n' | sed 's/^ *"//; s/" *$//'
 }
 
 # --- Path helpers ---
