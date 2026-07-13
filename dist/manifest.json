@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-07-06T05:21:01Z",
+  "timestamp": "2026-07-13T04:45:07Z",
   "platforms": {
     "cursor": {
       "rules": [
@@ -15,12 +15,12 @@
       ]
     },
     "opencode": {
-      "agents_md": "dist/opencode/agents.md",
+      "instructions_md": "dist/opencode/instructions.md",
       "rules": "dist/opencode/rules/",
       "skills": "dist/opencode/skills/"
     },
     "antigravity": {
-      "agents_md": "dist/antigravity/agents.md",
+      "instructions_md": "dist/antigravity/instructions.md",
       "rules": "dist/antigravity/rules/",
       "skills": "dist/antigravity/skills/"
     }

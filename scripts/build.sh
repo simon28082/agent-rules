@@ -17,10 +17,16 @@ extract_frontmatter() {
   ' "$file"
 }
 
-# Extract description value from frontmatter.
-parse_description() {
+# Extract title value from frontmatter.
+parse_title() {
   local file="$1"
-  extract_frontmatter "$file" | awk -F': ' '/^description:/ { $1=""; sub(/^ /, ""); print }'
+  extract_frontmatter "$file" | awk -F': ' '/^title:/ { $1=""; sub(/^ /, ""); print }'
+}
+
+# Extract apply value from frontmatter. Returns "always" or empty string.
+parse_apply() {
+  local file="$1"
+  extract_frontmatter "$file" | awk -F': ' '/^apply:/ { $1=""; sub(/^ /, ""); print }'
 }
 
 # Extract match value. Returns "always" or a JSON-style array string like '["**/*.go","**/go.mod"]'.
@@ -107,23 +113,24 @@ build_cursor() {
   local cursor_dir="$DIST/cursor"
   mkdir -p "$cursor_dir/rules" "$cursor_dir/skills"
 
-  local relative match description body globs_yaml
+  local relative match apply_val title body globs_yaml
 
   while IFS= read -r relative; do
     [[ -n "$relative" ]] || continue
 
     match="$(parse_match "$ROOT/$relative")"
-    description="$(parse_description "$ROOT/$relative")"
+    apply_val="$(parse_apply "$ROOT/$relative")"
+    title="$(parse_title "$ROOT/$relative")"
     body="$(strip_frontmatter "$ROOT/$relative")"
     body="$(rewrite_rule_links_for_cursor "$body")"
 
     {
       printf '%s\n' '---'
-      printf 'description: %s\n' "$description"
+      printf 'description: %s\n' "$title"
 
-      if [[ "$match" == "always" ]]; then
+      if [[ "$apply_val" == "always" ]]; then
         printf '%s\n' 'alwaysApply: true'
-      else
+      elif [[ -n "$match" ]]; then
         printf '%s\n' 'alwaysApply: false'
         printf '%s\n' 'globs:'
         while IFS= read -r glob; do
@@ -153,29 +160,35 @@ build_agents_platform() {
 
   mkdir -p "$platform_dir/rules" "$platform_dir/skills"
 
-  local relative match description body
+  local relative match apply_val title body
   local always_rules=()
   local conditional_rules=()
 
   # Classify rules
   while IFS= read -r relative; do
     [[ -n "$relative" ]] || continue
-    match="$(parse_match "$ROOT/$relative")"
-    if [[ "$match" == "always" ]]; then
+    apply_val="$(parse_apply "$ROOT/$relative")"
+    if [[ "$apply_val" == "always" ]]; then
       always_rules+=("$relative")
     else
       conditional_rules+=("$relative")
     fi
   done < <(collect_rule_paths)
 
-  # Generate agents.md
+  # Generate instructions.md
   {
-    printf '%s\n' '<!-- agent-rules:start -->'
+    printf '%s\n' '<!--agent-rules:begin-->'
     printf '%s\n\n' '# Personal Agent Rules'
     printf '%s\n\n' '以下规则始终生效。'
 
     for relative in "${always_rules[@]}"; do
+      title="$(parse_title "$ROOT/$relative")"
       body="$(strip_frontmatter "$ROOT/$relative")"
+      # Strip leading # heading and following blank lines (title comes from frontmatter)
+      body="$(printf '%s' "$body" | awk 'NR==1 && /^# / {skip=1; next} skip && /^$/ {next} {skip=0; print}')"
+      if [[ -n "$title" ]]; then
+        printf '# %s\n\n' "$title"
+      fi
       printf '%s\n\n' "$body"
     done
 
@@ -184,23 +197,42 @@ build_agents_platform() {
       printf '%s\n\n' '根据项目类型，按需读取以下规则文件：'
 
       for relative in "${conditional_rules[@]}"; do
-        description="$(parse_description "$ROOT/$relative")"
+        title="$(parse_title "$ROOT/$relative")"
+        match="$(parse_match "$ROOT/$relative")"
         # Derive the target file path relative to rules/
         local rule_subpath="${relative#rules/}"
-        printf -- '- %s → `%s/%s`\n' "$description" "$target_rules_path" "$rule_subpath"
+        if [[ -n "$match" ]]; then
+          printf -- '- %s → `%s/%s`（适用于 `%s`）\n' "$title" "$target_rules_path" "$rule_subpath" "$match"
+        else
+          printf -- '- %s → `%s/%s`\n' "$title" "$target_rules_path" "$rule_subpath"
+        fi
       done
       printf '\n'
     fi
 
-    printf '%s\n' '<!-- agent-rules:end -->'
-  } > "$platform_dir/agents.md"
+    printf '%s\n' '<!--agent-rules:end-->'
+  } > "$platform_dir/instructions.md"
 
-  # Copy conditional rule files (stripped of custom frontmatter)
+  # Copy conditional rule files with title heading and match hint
   for relative in "${conditional_rules[@]}"; do
+    title="$(parse_title "$ROOT/$relative")"
+    match="$(parse_match "$ROOT/$relative")"
     local rule_subpath="${relative#rules/}"
     local target_file="$platform_dir/rules/$rule_subpath"
     mkdir -p "$(dirname "$target_file")"
-    strip_frontmatter "$ROOT/$relative" > "$target_file"
+    {
+      local cond_body
+      cond_body="$(strip_frontmatter "$ROOT/$relative")"
+      # Strip leading # heading and following blank lines (title comes from frontmatter)
+      cond_body="$(printf '%s' "$cond_body" | awk 'NR==1 && /^# / {skip=1; next} skip && /^$/ {next} {skip=0; print}')"
+      if [[ -n "$title" ]]; then
+        printf '# %s\n\n' "$title"
+      fi
+      if [[ -n "$match" ]]; then
+        printf '> 此规则适用于 `%s`\n\n' "$match"
+      fi
+      printf '%s\n' "$cond_body"
+    } > "$target_file"
   done
 
   # Copy skills
@@ -251,14 +283,14 @@ generate_manifest() {
 
     # opencode
     printf '    "opencode": {\n'
-    printf '      "agents_md": "dist/opencode/agents.md",\n'
+    printf '      "instructions_md": "dist/opencode/instructions.md",\n'
     printf '      "rules": "dist/opencode/rules/",\n'
     printf '      "skills": "dist/opencode/skills/"\n'
     printf '    },\n'
 
     # antigravity
     printf '    "antigravity": {\n'
-    printf '      "agents_md": "dist/antigravity/agents.md",\n'
+    printf '      "instructions_md": "dist/antigravity/instructions.md",\n'
     printf '      "rules": "dist/antigravity/rules/",\n'
     printf '      "skills": "dist/antigravity/skills/"\n'
     printf '    }\n'
@@ -282,14 +314,14 @@ self_check() {
     exit 1
   fi
 
-  # Verify agents.md files contain markers
+  # Verify instructions.md files contain markers
   for platform in opencode antigravity; do
-    if ! grep -q 'agent-rules:start' "$DIST/$platform/agents.md"; then
-      printf 'Build check failed: %s agents.md missing agent-rules:start marker\n' "$platform" >&2
+    if ! grep -q 'agent-rules:begin' "$DIST/$platform/instructions.md"; then
+      printf 'Build check failed: %s instructions.md missing agent-rules:begin marker\n' "$platform" >&2
       exit 1
     fi
-    if ! grep -q 'agent-rules:end' "$DIST/$platform/agents.md"; then
-      printf 'Build check failed: %s agents.md missing agent-rules:end marker\n' "$platform" >&2
+    if ! grep -q 'agent-rules:end' "$DIST/$platform/instructions.md"; then
+      printf 'Build check failed: %s instructions.md missing agent-rules:end marker\n' "$platform" >&2
       exit 1
     fi
   done

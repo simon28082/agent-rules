@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{TICKER}} 深度研究报告 - 封面</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    font-family: 'Noto Sans SC', 'Inter', -apple-system, sans-serif;
+    background: #ffffff;
+    margin: 0;
+  }
+
+  .cover {
+    width: auto;
+    padding: 56px 64px 40px;
+    background: #fcfcfc;
+    position: relative;
+    overflow: hidden;
+    text-align: center;
+  }
+
+  .meta-grid {
+    display: flex;
+    gap: 32px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    color: #94a3b8;
+    margin-bottom: 0;
+    justify-content: center;
+  }
+
+  .tags {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding-top: 0;
+    justify-content: center;
+  }
+
+  .title-en {
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    font-weight: 400;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #94a3b8;
+    margin-bottom: 8px;
+  }
+
+  .title-main {
+    font-size: 42px;
+    font-weight: 900;
+    line-height: 1.2;
+    color: #0f172a;
+    margin-bottom: 4px;
+    letter-spacing: 1px;
+  }
+
+  .title-main .highlight {
+    color: {{PRIMARY_COLOR}};
+  }
+
+  .title-sub {
+    font-size: 18px;
+    font-weight: 300;
+    color: #64748b;
+    letter-spacing: 4px;
+    margin-bottom: 20px;
+  }
+
+  .divider-deco {
+    height: 1px;
+    margin: 0 auto 20px;
+  }
+
+  .divider-full {
+    height: 1px;
+    margin: 20px auto;
+  }
+
+  .meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .meta-item .label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #cbd5e1;
+  }
+
+  .meta-item .value {
+    font-weight: 600;
+    color: #475569;
+  }
+
+  .tag {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    color: #64748b;
+    padding: 4px 12px;
+    background: #f8fafc;
+    border-radius: 4px;
+    border: 1px solid #e2e8f0;
+  }
+</style>
+</head>
+<body>
+<div class="cover">
+  <div class="title-en">{{COMPANY}}</div>
+  <div class="title-main"><span class="highlight">{{TICKER}}</span> {{TITLE_CN}}</div>
+  <div class="title-sub">{{SUBTITLE}}</div>
+  <div class="divider-deco"></div>
+  <div class="meta-grid">
+    <div class="meta-item">
+      <span class="label">Ticker</span>
+      <span class="value">{{TICKER_FULL}}</span>
+    </div>
+    <div class="meta-item">
+      <span class="label">Date</span>
+      <span class="value">{{DATE}}</span>
+    </div>
+    <div class="meta-item">
+      <span class="label">{{M1_LABEL}}</span>
+      <span class="value">{{M1_VAL}}</span>
+    </div>
+    <div class="meta-item">
+      <span class="label">{{M2_LABEL}}</span>
+      <span class="value">{{M2_VAL}}</span>
+    </div>
+    <div class="meta-item">
+      <span class="label">{{M3_LABEL}}</span>
+      <span class="value">{{M3_VAL}}</span>
+    </div>
+  </div>
+  <div class="divider-full"></div>
+  <div class="tags">
+    <span class="tag">{{TAG1}}</span>
+    <span class="tag">{{TAG2}}</span>
+    <span class="tag">{{TAG3}}</span>
+  </div>
+</div>
+</body>
+</html>

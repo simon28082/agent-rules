@@ -1,4 +1,6 @@
-# Node.js / TypeScript 通用规范
+# Node.js / TypeScript 规范
+
+> 此规则适用于 `["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"]`
 
 本文件只定义 Node.js 与 TypeScript/JavaScript 层面的特有约束。跨语言基础工程约束见 `rules/project.md`，仓库内更具体规则优先。
 

@@ -1,4 +1,4 @@
-<!-- agent-rules:start -->
+<!--agent-rules:begin-->
 # Personal Agent Rules
 
 以下规则始终生效。
@@ -138,8 +138,8 @@
 
 根据项目类型，按需读取以下规则文件：
 
-- Go 语言与工具通用规范 → `~/.config/opencode/rules/languages/go.md`
-- Node.js / TypeScript 语言与工具通用规范 → `~/.config/opencode/rules/languages/nodejs.md`
-- Python 语言与工具通用规范 → `~/.config/opencode/rules/languages/python.md`
+- Go 规范 → `~/.gemini/config/rules/languages/go.md`（适用于 `["**/*.go", "**/go.mod", "**/go.sum"]`）
+- Node.js / TypeScript 规范 → `~/.gemini/config/rules/languages/nodejs.md`（适用于 `["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"]`）
+- Python 规范 → `~/.gemini/config/rules/languages/python.md`（适用于 `["**/*.py"]`）
 
-<!-- agent-rules:end -->
+<!--agent-rules:end-->

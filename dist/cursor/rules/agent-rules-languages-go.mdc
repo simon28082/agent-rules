@@ -1,5 +1,5 @@
 ---
-description: Go 语言与工具通用规范
+description: Go 规范
 alwaysApply: false
 globs:
   - "**/*.go"
