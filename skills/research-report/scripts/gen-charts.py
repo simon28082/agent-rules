@@ -227,12 +227,13 @@ def cmd_table(args):
     height = min(max(2.4, 0.48 * (len(rows) + 2)), 8)
     fig, ax = plt.subplots(figsize=(8, height))
     ax.axis("off")
+    fig.subplots_adjust(left=0.02, right=0.98, top=0.82, bottom=0.13)
     table = ax.table(
         cellText=rows,
         colLabels=headers,
         cellLoc="left",
         colLoc="left",
-        loc="center",
+        bbox=[0, 0, 1, 1],
     )
     table.auto_set_font_size(False)
     table.set_fontsize(8.5)
@@ -246,11 +247,10 @@ def cmd_table(args):
         elif row_index % 2 == 0:
             cell.set_facecolor("#f8fafc")
 
-    ax.set_title(args.title, fontsize=12, fontweight="bold", pad=12)
-    fig.text(0.5, -0.01, f"数据来源：{args.source}",
+    ax.set_title(args.title, fontsize=12, fontweight="bold", pad=7)
+    fig.text(0.5, 0.045, f"数据来源：{args.source}",
              ha="center", va="top", fontsize=7.5,
              fontstyle="italic", color="#888888")
-    plt.tight_layout()
     os.makedirs(os.path.dirname(args.output) or ".", exist_ok=True)
     plt.savefig(args.output, dpi=150, bbox_inches="tight")
     print(f"Saved {args.output}")
