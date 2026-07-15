@@ -50,26 +50,27 @@ def cmd_pie(args):
         startangle=90, pctdistance=0.75,
         textprops={"fontsize": 10})
     if labels:
-        if args.amount_and_percentage:
-            total = sum(values)
-            if total == 0:
-                raise ValueError("revenue pie chart values must not sum to zero")
-            legend_labels = [
-                f"{label}：${value:.1f}{args.amount_unit}（{value / total:.0%}）"
-                for label, value in zip(labels, values)
-            ]
-        elif args.percentage:
-            total = sum(values)
-            if total == 0:
-                raise ValueError("percentage pie chart values must not sum to zero")
+        total = sum(values)
+        if total == 0:
+            raise ValueError("pie chart values must not sum to zero")
+        if args.percentage:
             legend_labels = [
                 f"{label} ({value / total:.1%})"
                 for label, value in zip(labels, values)
             ]
         else:
+            if args.value_type == "currency" and not args.value_unit:
+                raise ValueError("currency pie charts require --value-unit")
+            value_labels = []
+            for value in values:
+                formatted_value = f"{value:.0f}" if value.is_integer() else f"{value:.1f}"
+                prefix = "$" if args.value_type == "currency" else ""
+                value_labels.append(
+                    f"{prefix}{formatted_value}{args.value_unit}"
+                )
             legend_labels = [
-                f"{label} (${value:.0f}M)"
-                for label, value in zip(labels, values)
+                f"{label}：{value_label}（{value / total:.0%}）"
+                for label, value, value_label in zip(labels, values, value_labels)
             ]
         ax.legend(wedges, legend_labels, loc="lower center",
                  ncol=min(len(labels), 3), fontsize=8,
@@ -227,7 +228,7 @@ def cmd_table(args):
     height = min(max(2.4, 0.48 * (len(rows) + 2)), 8)
     fig, ax = plt.subplots(figsize=(8, height))
     ax.axis("off")
-    fig.subplots_adjust(left=0.02, right=0.98, top=0.82, bottom=0.13)
+    fig.subplots_adjust(left=0.02, right=0.98, top=0.76, bottom=0.18)
     table = ax.table(
         cellText=rows,
         colLabels=headers,
@@ -247,8 +248,8 @@ def cmd_table(args):
         elif row_index % 2 == 0:
             cell.set_facecolor("#f8fafc")
 
-    ax.set_title(args.title, fontsize=12, fontweight="bold", pad=7)
-    fig.text(0.5, 0.045, f"数据来源：{args.source}",
+    ax.set_title(args.title, fontsize=12, fontweight="bold", pad=10)
+    fig.text(0.5, 0.07, f"数据来源：{args.source}",
              ha="center", va="top", fontsize=7.5,
              fontstyle="italic", color="#888888")
     os.makedirs(os.path.dirname(args.output) or ".", exist_ok=True)
@@ -318,22 +319,21 @@ def main():
     parser.add_argument("--output", required=True, help="Output PNG path")
     # pie
     parser.add_argument("--data", help="Pie data: 'Label1:val1,Label2:val2'")
-    pie_display = parser.add_mutually_exclusive_group()
-    pie_display.add_argument(
+    parser.add_argument(
         "--percentage",
         action="store_true",
-        help="Display pie-chart legend values as shares instead of $M",
-    )
-    pie_display.add_argument(
-        "--amount-and-percentage",
-        action="store_true",
-        help="Display pie-chart legend values as USD amounts and shares",
+        help="Display pie-chart legend values as shares only",
     )
     parser.add_argument(
-        "--amount-unit",
-        choices=["M", "B"],
-        default="M",
-        help="Unit for --amount-and-percentage values",
+        "--value-type",
+        choices=["currency", "number"],
+        default="number",
+        help="Pie-chart value type; currency adds a dollar sign",
+    )
+    parser.add_argument(
+        "--value-unit",
+        default="",
+        help="Pie-chart value unit, such as B, M, 台, 客户",
     )
     # bar / pie
     parser.add_argument("--labels", help="X-axis labels: 'A,B,C'")
