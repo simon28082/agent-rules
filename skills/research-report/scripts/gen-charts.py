@@ -94,7 +94,7 @@ def cmd_bar(args):
     bars = ax.bar(labels, values, color=colors, width=0.55)
     for bar, v in zip(bars, values):
         ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height(),
-                f"{v:.0f}" if abs(v) >= 1 else f"{v:.1f}",
+                f"{v:.1f}" if v != int(v) else f"{v:.0f}",
                 ha="center", va="bottom", fontsize=8)
     ax.set_title(args.title, fontsize=12, fontweight="bold", pad=10)
     ax.set_ylabel(args.ylabel or "", fontsize=10)
