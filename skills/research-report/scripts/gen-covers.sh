@@ -38,16 +38,17 @@ generate() {
 
 render_and_crop() {
   local dir="$1"
-  local html="$dir/cover.html"
+  local outname="${2:-cover}"
+  local html="$dir/$outname.html"
   cd "$dir"
-  "$CHROME" --headless --screenshot=cover.png --window-size=800,420 --force-device-scale-factor=2 "file://$PWD/cover.html" 2>/dev/null
+  "$CHROME" --headless --screenshot="$outname.png" --window-size=800,420 --force-device-scale-factor=2 "file://$PWD/$outname.html" 2>/dev/null
   python3 -c "
 from PIL import Image; import numpy as np
-img = Image.open('cover.png'); arr = np.array(img)
+img = Image.open('$outname.png'); arr = np.array(img)
 mask = ~((arr[:,:,0] > 254) & (arr[:,:,1] > 254) & (arr[:,:,2] > 254))
 coords = np.argwhere(mask)
 y0, x0 = coords.min(axis=0); y1, x1 = coords.max(axis=0) + 1
-img.crop((x0-4, y0-4, x1+4, y1+4)).save('cover.png')
+img.crop((x0-4, y0-4, x1+4, y1+4)).save('$outname.png')
   "
   cd - >/dev/null
 }
